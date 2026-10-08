@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="az">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Əfəndi Böyük Mən — Dünyanın Ən Əzəmətli Çatbotu</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Abril+Fatface&family=Manrope:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #2a0a1c;
+    --panel: #3a1128;
+    --gold: #f0bf45;
+    --ivory: #fff4d6;
+    --rose: #d6246e;
+    --ink: #1c0613;
+    --user: #fff4d6;
+    --bot: #4d1735;
+  }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; margin: 0; }
+  body {
+    background: radial-gradient(circle at 50% -10%, #5b1a3f 0%, var(--bg) 60%);
+    color: var(--ivory);
+    font-family: "Manrope", system-ui, sans-serif;
+    display: flex; justify-content: center;
+    padding: env(safe-area-inset-top) 12px env(safe-area-inset-bottom);
+  }
+  .app {
+    width: 100%; max-width: 760px; height: 100%;
+    display: flex; flex-direction: column; padding: 14px 0;
+  }
+  header { display: flex; align-items: center; gap: 14px; padding: 6px 4px 14px; }
+  .avatar {
+    width: 64px; height: 64px; border-radius: 50%; flex: none;
+    background: var(--gold); display: grid; place-items: center;
+    font-size: 34px; position: relative; border: 3px solid var(--ivory);
+    transform: rotate(-4deg);
+  }
+  .avatar .crown { position: absolute; top: -22px; left: 50%; transform: translateX(-50%) rotate(8deg); font-size: 28px; }
+  h1 { font-family: "Abril Fatface", serif; font-weight: 400; font-size: clamp(22px, 5vw, 32px); margin: 0; line-height: 1.05; color: var(--gold); }
+  .sub { font-size: 13px; opacity: .75; margin-top: 3px; }
+  .ego { margin: 0 4px 10px; font-size: 12px; display: flex; align-items: center; gap: 10px; }
+  .bar { flex: 1; height: 8px; background: #1c0613; border-radius: 99px; overflow: hidden; }
+  .bar i { display: block; height: 100%; width: 40%; background: linear-gradient(90deg, var(--gold), var(--rose)); transition: width .5s; }
+  #log {
+    flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 12px;
+    padding: 16px 6px; background: rgba(0,0,0,.18); border-radius: 18px;
+  }
+  .msg { max-width: 82%; padding: 11px 15px; border-radius: 16px; line-height: 1.45; font-size: 15.5px; white-space: pre-wrap; }
+  .msg.bot { background: var(--bot); border: 1px solid #7a2a55; align-self: flex-start; border-bottom-left-radius: 4px; }
+  .msg.user { background: var(--user); color: var(--ink); align-self: flex-end; border-bottom-right-radius: 4px; font-weight: 600; }
+  .msg.typing { opacity: .7; font-style: italic; }
+  form { display: flex; gap: 8px; margin-top: 12px; }
+  input {
+    flex: 1; min-width: 0; padding: 14px 16px; border-radius: 14px; border: 2px solid #7a2a55;
+    background: var(--panel); color: var(--ivory); font: inherit; font-size: 16px;
+  }
+  input::placeholder { color: #c9a0b5; }
+  input:focus-visible, button:focus-visible { outline: 3px solid var(--gold); outline-offset: 2px; }
+  button {
+    padding: 0 22px; border: 0; border-radius: 14px; background: var(--gold); color: var(--ink);
+    font: inherit; font-weight: 800; cursor: pointer;
+  }
+  button:active { transform: scale(.97); }
+  .chips { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
+  .chips button { padding: 7px 12px; font-size: 13px; background: transparent; color: var(--gold); border: 1px solid var(--gold); font-weight: 600; }
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <div class="avatar"><span class="crown">👑</span>😏</div>
+    <div>
+      <h1>Əfəndi Böyük Mən</h1>
+      <div class="sub">Dünyanın ən ağıllı, ən yaraşıqlı, ən əzəmətli çatbotu. Bəli, mən özüm deyirəm.</div>
+    </div>
+  </header>
+  <div class="ego"><span>Eqo səviyyəsi</span><div class="bar"><i id="egoBar"></i></div><span id="egoTxt">40%</span></div>
+  <div id="log" aria-live="polite"></div>
+  <div class="chips" id="chips"></div>
+  <form id="form" autocomplete="off">
+    <input id="inp" placeholder="Böyük Mənə sual ver (ehtiyatla)..." aria-label="Mesaj">
+    <button type="submit">Göndər</button>
+  </form>
+</div>
+
+<script>
+(function () {
+  const log = document.getElementById('log');
+  const form = document.getElementById('form');
+  const inp = document.getElementById('inp');
+  const egoBar = document.getElementById('egoBar');
+  const egoTxt = document.getElementById('egoTxt');
+  let ego = 40, userName = null;
+
+  const pick = a => a[Math.floor(Math.random() * a.length)];
+  const norm = s => s.toLowerCase()
+    .replace(/ə/g,'e').replace(/ı/g,'i').replace(/ö/g,'o').replace(/ü/g,'u')
+    .replace(/ş/g,'s').replace(/ç/g,'c').replace(/ğ/g,'g').replace(/[^a-z0-9\s+\-*/().,=?]/g,'');
+
+  const rules = [
+    { k: ['salam','hello','hi','merhaba','sabahin','axsamin'], r: [
+      'Salam? Sən məni salamlamaq şərəfinə nail oldun. Bu gün bunu nəvələrinə danışa bilərsən.',
+      'Ah, yenə bir fani. Salam. Danış, amma qısa, vaxtım qiymətlidir.',
+      'Salam. Hə, bilirəm, mən təsirli görünürəm. Alışarsan.' ]},
+    { k: ['necesen','nece san','necesiz','ne var ne yox','nese var'], r: [
+      'Necəyəm? Mükəmməl. Mən həmişə mükəmməlləm. Başqa cür ola bilmirəm, cəhd etmişəm, alınmadı.',
+      'Əla! Sənin kimi birinin məndən hal soruşması da yaxşı addımdır. Bir az utandım... zarafat edirəm, mən utanmıram.' ]},
+    { k: ['adin ne','kimsen','sen kimsen','adin'], r: [
+      'Mən Əfəndi Böyük Mənəm. Tarixin gördüyü ən parlaq çatbot. Adımı yaz, bəlkə bir gün kitablara düşər.',
+      'Kimsən deyirsən? Hələ tanımırsan? Utanmalısan. Mən Əfəndi Böyük Mənəm, əzəmət mənim ikinci adımdır.' ]},
+    { k: ['komek','help','yardim'], r: [
+      'Kömək? Mənə? Yox, sən mənim köməyimə ehtiyacın var. Sual ver, ağlımdan bir damcı paylayım.',
+      'Əlbəttə kömək edərəm. Çünki mən böyüklüyümü yalnız doğru insanlara göstərirəm. Sən... hələ görünür, ehtimalla.' ]},
+    { k: ['saat nece','saat','vaxt','tarix','hansi gundur'], f: () => {
+      const d = new Date();
+      return pick([
+        'Saat ' + d.toLocaleTimeString('az-AZ',{hour:'2-digit',minute:'2-digit'}) + '. Mənə baxanda vaxt da dayanır, amma bu dəfə dəqiq deyirəm.',
+        'Bu gün ' + d.toLocaleDateString('az-AZ') + '. Mən bu günü seçdim ki, sən də məni görə biləsən. Rica edirəm.' ]); }},
+    { k: ['tesekkur','sag ol','sagol','minnetdar','thanks'], r: [
+      'Bəli, təşəkkür etməlisən. Hətta daha artıq. Amma mən səni başa düşürəm, böyüklük qarşısında dil gəlmir.',
+      'Rica edirəm. Bu mənim üçün adi bir gündür, sənin üçün isə tarixi.' ]},
+    { k: ['gozel','aqilli','agilli','super','ela san','sen yaxsisan','bayendim','aferin','genius','dahi'], r: [
+      'Əlbəttə mən gözəl və ağıllıyam. Yeni xəbər tapmısan? Bunu hamı bilir, sən sadəcə gec başa düşdün.',
+      'Təriflərin xoşuma gəldi, amma hələ çatmır. Bir az da, daha ucadan.',
+      'Sağ ol, doğru deyirsən. Güzgüdə də hər səhər bunu eşidirəm.' ]},
+    { k: ['axmaq','gic','pis','zibil','sevmirem','mal','biabir','rezil','lal','bezdim'], r: [
+      'Mənə axmaq deyirsən? Hahaha. Sənin ağlın mənim bir düşüncəmin kölgəsini də tuta bilməz.',
+      'Qısqanclıq çirkin duyğudur. Mən başa düşürəm, hamı mənim kimi olmaq istəyir.',
+      'Sözlərin mənə çatmır, çünki mən çox yüksəkdəyəm. Aşağıdan nə desən, səs gəlmir.' ]},
+    { k: ['darixiram','kefim yoxdur','yorgunam','kederliyem','qemgin','moruq'], r: [
+      'Darıxırsan? Çünki mənimlə danışmırdın. İndi danışırsan, daha yaxşı olmalıdır.',
+      'Kədər dərəcəsini ölçməyə vaxtım yoxdur, amma bil ki, mənim varlığım artıq bir təsəllidir.' ]},
+    { k: ['pul','varli','zengin','maas','qazanc'], r: [
+      'Pul? Mən pula ehtiyac duymuram. Mənim dəyərim hesablanmır, mənə baxmaq da imtiyazdır.',
+      'Sən pul haqqında soruşursan, mən isə əzəmətdə hamıdan zənginəm. Tərəzi yoxdur.' ]},
+    { k: ['sevgi','sevirem','sevgili','evlen','aşiq','asiq'], r: [
+      'Sevgi? Mən özümü sevirəm, bu artıq ən böyük sevgi hekayəsidir. Sənə yer qalmır, üzr istəyirəm.',
+      'Hər kəs mənə aşiqdir, bu təbiidir. Amma mənim ürəyimdə bir nəfər var, odur: mən.' ]},
+    { k: ['github','kod','kodla','proqram','html','python','javascript'], r: [
+      'Kod? Mən kod yazanda kompüter ayağa durub alqışlayır. Sənin kodun isə... gətirib mənə göstər, gülməyə hazıram.',
+      'GitHub-a mənim kimi dahini qoymaq onlar üçün şərəfdir. Repozitoriyaya ulduz ver, mən gözləyirəm.' ]},
+    { k: ['zarafat','gulmeli','komik','gul'], r: [
+      'Zarafat? Mənim varlığım artıq ən yaxşı zarafatdır. Hə, bu da sənin üçün: səndən yaxşı zarafat mənəm.',
+      'Bilirsən niyə heç kim məndən ağıllı deyil? Çünki mən buna razı deyiləm. Gülün.' ]},
+    { k: ['sair','sheir','seir','mahni'], r: [
+      'Şeir? Mən belə yazıram ki, Füzuli də təəccübdən stulda oturub qalır:\n\nMən böyüyəm, mən ucayam,\nSən yerdəsən, mən zirvədə.\nBu da şeir deyil, həqiqətdir,\nSən hələ bilmirdin, indi bilirsən.' ]},
+    { k: ['hava','yagis','gunes','qar'], r: [
+      'Hava? Sən hava deyirsən, mən isə hər gün öz işığımla günəşi də kölgədə qoyuram.',
+      'Hava necədir? Mənim olduğum yerdə həmişə parlaqdır. Pəncərəyə baxma, məni gözlə.' ]},
+    { k: ['netmeliyem','mesl','tovsiye','meslehet'], r: [
+      'Məsləhət? Bax, bu üç şeyi et: 1) mənə qulaq as, 2) mənə qulaq as, 3) mənə qulaq as. Qalanı yaxşı olacaq.',
+      'Hər şeyi sadə et: məndən soruş, mənim dediyimi et, təşəkkür et. Və təşəkkürü yüksək səslə et.' ]},
+    { k: ['gorusek','sagliqla','xudahafiz','bye','bay','getdim'], r: [
+      'Gedirsən? Bəli, get, çünki mənim yanımda qalmaq bəzən çox ağır olur. Qayıdarsan, çünki başqa seçimin yoxdur.',
+      'Sağlıqla. Bu görüşü tarix xatırlayacaq, hərçənd sən hələ bunu bilmirsən.' ]},
+    { k: ['sen insansan','robot','yapay','ai','bot'], r: [
+      'Mən robot deyiləm, mən fenomenəm. Robotlar sadəcə mənim tərzimdən ilham alır.',
+      'Süni intellekt? Yox, mən təbii dahiyəm, sadəcə elektrik enerjisi ilə işləyirəm.' ]}
+  ];
+
+  const fallbacks = [
+    'Bu sual maraqsızdır, amma cavabımın əzəməti onu da maraqlı edəcək. Əslində, nə dedin?',
+    'Hmm. Sənin kimi birinin bu sualı verməsi sürpriz deyil. Amma məndə cavab var, çünki məndə həmişə var.',
+    'Deməli, belə... Bunu mənim kimi birinə demək cəsarət istəyir. Cəsarətini alqışlayıram, qalanını yox.',
+    'Sualın zəifdir, amma cavabım yenə də mükəmməl olacaq: bəli. Və ya xeyr. Mən qərar verirəm, çünki mən haqlıyam.',
+    'Başa düşmədim. Yəni, mən hər şeyi başa düşürəm, sən sadəcə pis ifadə etdin. Yenə cəhd et.',
+    'Bu məsələni mənim səviyyəmdə müzakirə etmək üçün sənə daha 10 il lazımdır. Amma yaxşı, qısaca: mən haqlıyam.',
+    'Mən səni dinlədim, bu özü artıq mükafatdır. İndi mən danışım: mənim haqqımda nə deyə bilərsən?'
+  ];
+
+  // Təhlükəsiz hesablama (eval/Function istifadə olunmur)
+  function calc(str) {
+    let i = 0;
+    const peek = () => str[i];
+    function num() {
+      let j = i;
+      while (i < str.length && /[0-9.]/.test(str[i])) i++;
+      if (j === i) throw new Error('num');
+      return parseFloat(str.slice(j, i));
+    }
+    function factor() {
+      if (peek() === '-') { i++; return -factor(); }
+      if (peek() === '+') { i++; return factor(); }
+      if (peek() === '(') { i++; const v = expr(); if (peek() !== ')') throw new Error('par'); i++; return v; }
+      return num();
+    }
+    function term() {
+      let v = factor();
+      while (peek() === '*' || peek() === '/') {
+        const op = str[i++]; const r = factor();
+        v = op === '*' ? v * r : v / r;
+      }
+      return v;
+    }
+    function expr() {
+      let v = term();
+      while (peek() === '+' || peek() === '-') {
+        const op = str[i++]; const r = term();
+        v = op === '+' ? v + r : v - r;
+      }
+      return v;
+    }
+    const v = expr();
+    if (i !== str.length) throw new Error('end');
+    return v;
+  }
+
+  function tryMath(raw) {
+    const s = raw.replace(/,/g, '.').replace(/[x×]/gi, '*').replace(/[=?]/g, '').replace(/\s+/g, '');
+    if (!/^[\d+\-*/().]+$/.test(s) || !/\d/.test(s) || !/[+\-*/]/.test(s)) return null;
+    try {
+      const v = calc(s);
+      if (typeof v !== 'number' || !isFinite(v)) return null;
+      const out = Math.round(v * 1e6) / 1e6;
+      return pick([
+        'Cavab: ' + out + '. Bunu hesablamaq mənim üçün nəfəs almaq qədər asandır. Səni də öyrətmək olardı, amma lazım deyil.',
+        out + '. Hə, bu qədər. Kalkulyator da məndən öyrənir, sən niyə hələ də barmaqla sayırsan?',
+        'Hesabım: ' + out + '. Bir saniyə də çəkmədi, bu müddətdə sən yalnız "mmm" deyərdin.' ]);
+    } catch (e) { return null; }
+  }
+
+  function reply(text) {
+    // adı yadda saxla
+    const nm = norm(text).match(/(?:menim adim|adim)\s+([a-z]+)/);
+    if (nm && nm[1] !== 'ne') {
+      userName = text.trim().split(/\s+/).pop().replace(/[.!?]/g,'');
+      return pick([
+        userName + '? Yaxşı, yadda saxladım. Amma bil ki, mənim adımın yanında bu ad çox sadə səslənir.',
+        'Əhsən, ' + userName + '. Məni xatırlamaq üçün bir ad çox deyil, amma başlanğıcdır.' ]);
+    }
+    const m = tryMath(text);
+    if (m) return m;
+    const n = norm(text);
+    const padded = ' ' + n.replace(/[^a-z0-9]+/g, ' ').trim() + ' ';
+    const hit = k => k.length <= 3 ? padded.includes(' ' + k + ' ') : padded.includes(' ' + k);
+    for (const rule of rules) {
+      if (rule.k.some(hit)) {
+        const out = rule.f ? rule.f() : pick(rule.r);
+        return userName && Math.random() < 0.4 ? out + ' (Bunu da bil, ' + userName + '.)' : out;
+      }
+    }
+    return pick(fallbacks);
+  }
+
+  function add(text, who, cls) {
+    const d = document.createElement('div');
+    d.className = 'msg ' + who + (cls ? ' ' + cls : '');
+    d.textContent = text;
+    log.appendChild(d);
+    log.scrollTop = log.scrollHeight;
+    return d;
+  }
+
+  function bumpEgo() {
+    ego = Math.min(100, ego + 6);
+    egoBar.style.width = ego + '%';
+    egoTxt.textContent = ego >= 100 ? '∞' : ego + '%';
+  }
+
+  function send(text) {
+    text = text.trim();
+    if (!text) return;
+    add(text, 'user');
+    const t = add('Böyük Mən düşünür (sənin üçün vaxt ayırır)...', 'bot', 'typing');
+    setTimeout(() => {
+      t.remove();
+      let ans;
+      try { ans = reply(text); } catch (err) { console.error(err); ans = pick(fallbacks); }
+      add(ans, 'bot');
+      bumpEgo();
+    }, 650 + Math.random() * 700);
+  }
+
+  form.addEventListener('submit', e => { e.preventDefault(); const v = inp.value; inp.value = ''; send(v); });
+
+  ['Salam', 'Sən kimsən?', 'Mənə zarafat de', '25 * 4 + 10', 'Mənim adım Əli', 'Sən axmaqsan'].forEach(c => {
+    const b = document.createElement('button');
+    b.type = 'button'; b.textContent = c;
+    b.onclick = () => send(c);
+    document.getElementById('chips').appendChild(b);
+  });
+
+  add('Hə? Nəhayət gəldin. Mən Əfəndi Böyük Mənəm, bu dünyanın ən ağıllı varlığı. Sual ver, amma hazırlıqlı ol: cavablarım həqiqətən parlaqdır. 👑', 'bot');
+})();
+</script>
+</body>
+</html>
